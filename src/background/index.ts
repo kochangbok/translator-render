@@ -56,7 +56,8 @@ function toPublicSettings(settings: ExtensionSettings): PublicExtensionSettings 
     providerId: settings.providerId,
     authType: settings.authType,
     mode: settings.mode,
-    chunkSize: settings.chunkSize
+    chunkSize: settings.chunkSize,
+    excludedDomains: settings.excludedDomains
   };
 }
 

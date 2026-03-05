@@ -101,6 +101,25 @@ async function getPublicSettings(): Promise<PublicExtensionSettings> {
   return sendRuntimeMessage<PublicExtensionSettings>({ type: 'GET_PUBLIC_SETTINGS' });
 }
 
+function normalizeDomain(input: string): string {
+  return input.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+}
+
+function isExcludedHostname(hostname: string, excludedDomains: string[]): boolean {
+  const normalizedHost = normalizeDomain(hostname);
+
+  return excludedDomains.some((value) => {
+    const target = normalizeDomain(value);
+    if (!target) return false;
+
+    if (target.includes('.')) {
+      return normalizedHost === target || normalizedHost.endsWith(`.${target}`);
+    }
+
+    return normalizedHost.includes(target);
+  });
+}
+
 function neighborContextFromBlocks(all: ParagraphBlock[], index: number): string[] {
   const prev = all[index - 1]?.text;
   const next = all[index + 1]?.text;
@@ -220,6 +239,9 @@ async function startTranslation(forceRestart = false): Promise<void> {
   const runId = activeRunId;
 
   const settings = await getPublicSettings();
+  if (isExcludedHostname(location.hostname, settings.excludedDomains)) {
+    throw new Error('보안 설정에 의해 이 도메인에서는 번역이 비활성화되어 있습니다.');
+  }
   isTranslationActive = true;
   activeMode = settings.mode;
 

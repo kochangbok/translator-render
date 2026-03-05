@@ -17,6 +17,7 @@ interface FormElements {
   oauthAudience: HTMLInputElement;
   mode: HTMLSelectElement;
   chunkSize: HTMLInputElement;
+  excludedDomains: HTMLTextAreaElement;
 }
 
 function getFormElements(): FormElements {
@@ -34,7 +35,8 @@ function getFormElements(): FormElements {
     oauthScope: document.getElementById('oauthScope') as HTMLInputElement,
     oauthAudience: document.getElementById('oauthAudience') as HTMLInputElement,
     mode: document.getElementById('mode') as HTMLSelectElement,
-    chunkSize: document.getElementById('chunkSize') as HTMLInputElement
+    chunkSize: document.getElementById('chunkSize') as HTMLInputElement,
+    excludedDomains: document.getElementById('excludedDomains') as HTMLTextAreaElement
   };
 }
 
@@ -97,7 +99,19 @@ function fillForm(values: ExtensionSettings): void {
   form.oauthAudience.value = values.oauthAudience;
   form.mode.value = values.mode;
   form.chunkSize.value = String(values.chunkSize);
+  form.excludedDomains.value = values.excludedDomains.join('\n');
   updateAuthVisibility();
+}
+
+function parseExcludedDomains(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split(/[\n,]/g)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 function readForm(): Partial<ExtensionSettings> {
@@ -117,6 +131,7 @@ function readForm(): Partial<ExtensionSettings> {
     oauthClientSecret: form.oauthClientSecret.value.trim(),
     oauthScope: form.oauthScope.value.trim(),
     oauthAudience: form.oauthAudience.value.trim(),
+    excludedDomains: parseExcludedDomains(form.excludedDomains.value),
     mode: form.mode.value as ExtensionSettings['mode'],
     chunkSize: Number.isFinite(chunkSize) ? Math.max(2, Math.min(20, chunkSize)) : DEFAULT_SETTINGS.chunkSize
   };

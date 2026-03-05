@@ -10,6 +10,7 @@ LLM 기반 웹페이지 번역 크롬 확장(MV3)입니다.
 - OAuth 로그인(`chrome.identity.launchWebAuthFlow`) 기반 토큰 인증 경로
 - 캐시/재시도/요청 큐
 - 단축키 토글: `Ctrl+Shift+Y` (`⌘+Shift+Y` on macOS)
+- 제외 도메인 설정(메일/금융 등 민감 도메인 번역 차단)
 
 ## 로컬 빌드
 
@@ -32,6 +33,7 @@ npm run build
 3. API Key 모드: API Key / Model 저장
 4. OAuth 모드: OAuth URL/Client 정보 저장 후 `OAuth 로그인`
 5. `연결 테스트` 버튼으로 확인
+6. 필요 시 제외 도메인 목록을 추가해 민감 페이지 번역을 차단
 
 ## 사용법
 1. 번역할 기사 페이지에서 확장 아이콘 클릭
@@ -45,6 +47,11 @@ npm run pack
 ```
 
 산출물: `translator-render-extension.zip`
+
+## Chrome Web Store 준비
+- 절차: `docs/chrome-web-store.md`
+- 스토어 설명 템플릿: `docs/webstore-listing.md`
+- 개인정보처리방침: `docs/privacy-policy.md`
 
 ## 참고
 - OAuth/Proxy/API Key 모두 지원합니다. 단, Provider가 OAuth를 공식 지원해야 로그인 성공합니다.

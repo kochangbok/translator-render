@@ -18,6 +18,12 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   oauthClientSecret: '',
   oauthScope: '',
   oauthAudience: '',
+  excludedDomains: [
+    'mail.google.com',
+    'outlook.live.com',
+    'accounts.google.com',
+    'paypal.com'
+  ],
   targetLang: 'ko',
   chunkSize: 8,
   mode: 'reader',

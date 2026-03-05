@@ -17,9 +17,24 @@ interface OAuthTokenResponse {
   expires_in?: number;
 }
 
+function isAllowedRemoteUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:') return true;
+    if (url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function assertOAuthConfig(settings: ExtensionSettings): void {
   if (!settings.oauthAuthUrl || !settings.oauthTokenUrl || !settings.oauthClientId) {
     throw new Error('OAuth 설정이 부족합니다. Auth URL / Token URL / Client ID를 확인하세요.');
+  }
+
+  if (!isAllowedRemoteUrl(settings.oauthAuthUrl) || !isAllowedRemoteUrl(settings.oauthTokenUrl)) {
+    throw new Error('OAuth URL은 HTTPS(또는 localhost/127.0.0.1의 HTTP)만 허용됩니다.');
   }
 }
 

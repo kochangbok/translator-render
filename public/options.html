@@ -114,6 +114,11 @@
         <input id="chunkSize" type="number" min="2" max="20" step="1" />
       </label>
 
+      <label>
+        제외 도메인 (줄바꿈/쉼표 구분)
+        <textarea id="excludedDomains" rows="4" placeholder="mail.google.com&#10;bank&#10;paypal.com" style="padding: 8px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 14px;"></textarea>
+      </label>
+
       <div class="row">
         <button id="save" class="primary" type="submit">저장</button>
         <button id="testConnection" type="button">연결 테스트</button>

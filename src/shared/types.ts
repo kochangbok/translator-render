@@ -46,6 +46,7 @@ export interface ExtensionSettings {
   oauthClientSecret: string;
   oauthScope: string;
   oauthAudience: string;
+  excludedDomains: string[];
   targetLang: 'ko';
   chunkSize: number;
   mode: RenderMode;
@@ -58,6 +59,7 @@ export interface PublicExtensionSettings {
   authType: AuthType;
   mode: RenderMode;
   chunkSize: number;
+  excludedDomains: string[];
 }
 
 export interface OAuthTokenState {

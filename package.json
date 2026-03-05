@@ -1,9 +1,10 @@
 {
   "name": "translator-render",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "icons": "python3 scripts/generate-icons.py",
     "dev": "vite build --watch",
     "build": "vite build",
     "pack": "npm run build && node scripts/pack-extension.mjs",

@@ -11,6 +11,17 @@ interface ChatResponse {
   }>;
 }
 
+function isAllowedEndpoint(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:') return true;
+    if (url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function localFallbackContext(article: ArticleContext): PreparedContext {
   const lines = article.blocks.slice(0, 8).map((block) => block.text);
   const summary = lines.join(' ').slice(0, 400);
@@ -42,6 +53,10 @@ export class OpenAIProvider implements ProviderAdapter {
   private async requestChatCompletion(body: Record<string, unknown>) {
     const endpoint =
       this.settings.proxyUrl && this.settings.authType === 'proxy' ? this.settings.proxyUrl : this.settings.endpoint;
+
+    if (!isAllowedEndpoint(endpoint)) {
+      throw new Error('엔드포인트 URL은 HTTPS(또는 localhost/127.0.0.1의 HTTP)만 허용됩니다.');
+    }
 
     return fetch(endpoint, {
       method: 'POST',
