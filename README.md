@@ -50,7 +50,9 @@ npm run pack
 
 ## Chrome Web Store 준비
 - 절차: `docs/chrome-web-store.md`
-- 스토어 설명 템플릿: `docs/webstore-listing.md`
+- 스토어 설명 최종본: `docs/webstore-listing.md`
+- 스크린샷 캡션 최종본: `docs/webstore-screenshot-captions.md`
+- 제출 체크리스트: `docs/webstore-submission-checklist.md`
 - 개인정보처리방침: `docs/privacy-policy.md`
 
 ## 참고

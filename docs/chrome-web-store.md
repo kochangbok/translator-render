@@ -15,11 +15,9 @@
 ## 3) 스토어 입력 항목
 - 카테고리: Productivity
 - 언어: Korean / English
-- 간단 설명(132자 이내):
-  - "웹페이지를 Reader 모드로 재렌더링해 문단 아래 한국어 번역을 삽입하는 LLM 번역 확장"
-- 상세 설명: `docs/webstore-listing.md` 템플릿 사용
+- 간단/상세 설명: `docs/webstore-listing.md` 최종본 사용
 - 아이콘: `public/icons/icon-128.png`
-- 스크린샷: 최소 1장(권장 3~5장)
+- 스크린샷: 최소 1장(권장 3~5장, `docs/webstore-screenshot-captions.md` 사용)
 - 개인정보처리방침 URL:
   - GitHub repo의 `docs/privacy-policy.md`를 GitHub Pages/외부 페이지로 게시한 URL
 
