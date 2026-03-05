@@ -16,6 +16,15 @@
     "default_title": "LLM Translator",
     "default_popup": "popup.html"
   },
+  "commands": {
+    "toggle-translation": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "현재 페이지 번역 토글"
+    }
+  },
   "options_page": "options.html",
   "content_scripts": [
     {

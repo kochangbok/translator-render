@@ -58,6 +58,7 @@ export type RuntimeMessage =
   | { type: 'GET_SETTINGS' }
   | { type: 'SAVE_SETTINGS'; payload: Partial<ExtensionSettings> }
   | { type: 'CLEAR_CACHE' }
+  | { type: 'TEST_PROVIDER' }
   | { type: 'PREPARE_DOCUMENT'; payload: ArticleContext }
   | { type: 'TRANSLATE_CHUNK'; payload: TranslateChunkPayload };
 

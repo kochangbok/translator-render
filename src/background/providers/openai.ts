@@ -39,20 +39,11 @@ export class OpenAIProvider implements ProviderAdapter {
 
   constructor(private readonly settings: ExtensionSettings) {}
 
-  private async requestJson<T>(input: {
-    system: string;
-    user: string;
-    schema: object;
-  }): Promise<T> {
-    if (!this.settings.apiKey) {
-      throw new Error('API 키가 설정되지 않았습니다. 옵션에서 API Key를 저장하세요.');
-    }
+  private async requestChatCompletion(body: Record<string, unknown>) {
+    const endpoint =
+      this.settings.proxyUrl && this.settings.authType === 'proxy' ? this.settings.proxyUrl : this.settings.endpoint;
 
-    const endpoint = this.settings.proxyUrl && this.settings.authType === 'proxy'
-      ? this.settings.proxyUrl
-      : this.settings.endpoint;
-
-    const response = await fetch(endpoint, {
+    return fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,23 +51,49 @@ export class OpenAIProvider implements ProviderAdapter {
           ? {}
           : { Authorization: `Bearer ${this.settings.apiKey}` })
       },
-      body: JSON.stringify({
-        model: this.settings.model,
-        temperature: this.settings.temperature,
-        messages: [
-          { role: 'system', content: input.system },
-          { role: 'user', content: input.user }
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'translation_response',
-            schema: input.schema,
-            strict: true
-          }
-        }
-      })
+      body: JSON.stringify(body)
     });
+  }
+
+  private async requestJson<T>(input: {
+    system: string;
+    user: string;
+    schema: object;
+  }): Promise<T> {
+    if (!this.settings.apiKey && this.settings.authType !== 'proxy') {
+      throw new Error('API 키가 설정되지 않았습니다. 옵션에서 API Key를 저장하세요.');
+    }
+
+    const baseBody = {
+      model: this.settings.model,
+      temperature: this.settings.temperature,
+      messages: [
+        { role: 'system', content: input.system },
+        { role: 'user', content: input.user }
+      ]
+    };
+
+    let response = await this.requestChatCompletion({
+      ...baseBody,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'translation_response',
+          schema: input.schema,
+          strict: true
+        }
+      }
+    });
+
+    if (!response.ok && response.status < 500) {
+      const bodyText = await response.text();
+      const isSchemaUnsupported = /response_format|json_schema|unsupported/i.test(bodyText);
+      if (!isSchemaUnsupported) {
+        throw new Error(`LLM 호출 실패 (${response.status}): ${bodyText.slice(0, 300)}`);
+      }
+
+      response = await this.requestChatCompletion(baseBody);
+    }
 
     if (!response.ok) {
       const bodyText = await response.text();

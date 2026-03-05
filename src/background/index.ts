@@ -55,6 +55,41 @@ async function prepareDocument(article: ArticleContext): Promise<PreparedContext
   return provider.prepareContext({ article });
 }
 
+async function testProviderConnection(): Promise<{ provider: string; model: string; sample: string }> {
+  const settings = await loadSettings();
+  const provider = createProvider(settings);
+
+  const results = await withRetries(
+    () =>
+      provider.translateChunk({
+        article: {
+          url: 'about:blank',
+          title: 'Connection Test',
+          siteName: 'llmtr'
+        },
+        blocks: [
+          {
+            id: 'sample',
+            text: 'This is a connection test. Please translate this sentence into Korean.',
+            type: 'p'
+          }
+        ],
+        preparedContext: {
+          summary: 'Connection test',
+          glossary: {}
+        },
+        neighborContext: []
+      }),
+    settings.maxRetries
+  );
+
+  return {
+    provider: settings.providerId,
+    model: settings.model,
+    sample: results[0]?.ko ?? ''
+  };
+}
+
 async function translateChunk(payload: {
   article: Pick<ArticleContext, 'url' | 'title' | 'siteName' | 'headings' | 'langHint'>;
   blocks: ParagraphBlock[];
@@ -141,6 +176,10 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _, sendResponse) 
           await clearTranslationCache();
           return ok({ cleared: true });
         }
+        case 'TEST_PROVIDER': {
+          const data = await testProviderConnection();
+          return ok(data);
+        }
         case 'PREPARE_DOCUMENT': {
           const data = await prepareDocument(message.payload);
           return ok(data);
@@ -163,6 +202,19 @@ chrome.runtime.onInstalled.addListener(async () => {
   const settings = await loadSettings();
   if (settings.chunkSize < 2 || settings.chunkSize > 20) {
     await saveSettings({ chunkSize: 8 });
+  }
+});
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'toggle-translation') return;
+
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!activeTab?.id) return;
+
+  try {
+    await chrome.tabs.sendMessage(activeTab.id, { type: 'TOGGLE_TRANSLATION' });
+  } catch {
+    // no-op
   }
 });
 

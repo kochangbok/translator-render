@@ -24,6 +24,7 @@ export function getExistingOverlay(): HTMLElement | null {
 
 export function removeOverlay(): void {
   getExistingOverlay()?.remove();
+  document.documentElement.style.overflow = '';
 }
 
 export function renderReaderOverlay(article: ArticleContext): ReaderOverlayHandle {
@@ -60,22 +61,23 @@ export function renderReaderOverlay(article: ArticleContext): ReaderOverlayHandl
   `;
 
   const closeButton = overlay.querySelector<HTMLButtonElement>('#llmtr-close');
-  closeButton?.addEventListener('click', () => removeOverlay());
+  const notifyClosed = () => {
+    window.dispatchEvent(new CustomEvent('llmtr-reader-closed'));
+  };
+  closeButton?.addEventListener('click', () => {
+    removeOverlay();
+    window.removeEventListener('keydown', onEsc);
+    notifyClosed();
+  });
 
   document.documentElement.appendChild(overlay);
   document.documentElement.style.overflow = 'hidden';
 
-  const cleanup = () => {
-    if (!document.getElementById(OVERLAY_ID)) {
-      document.documentElement.style.overflow = '';
-      window.removeEventListener('keydown', onEsc);
-    }
-  };
-
   const onEsc = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       removeOverlay();
-      cleanup();
+      window.removeEventListener('keydown', onEsc);
+      notifyClosed();
     }
   };
 

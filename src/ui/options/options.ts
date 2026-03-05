@@ -101,6 +101,21 @@ document.getElementById('clearCache')?.addEventListener('click', async () => {
   }
 });
 
+document.getElementById('testConnection')?.addEventListener('click', async () => {
+  setStatus('연결 테스트 중...');
+
+  try {
+    const result = await sendMessage<{ provider: string; model: string; sample: string }>({
+      type: 'TEST_PROVIDER'
+    });
+
+    const sample = result.sample ? ` / 샘플: ${result.sample}` : '';
+    setStatus(`연결 성공 (${result.provider}, ${result.model})${sample}`);
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : '연결 테스트 실패', true);
+  }
+});
+
 initialize().catch((error) => {
   setStatus(error instanceof Error ? error.message : '설정 로드 실패', true);
 });

@@ -15,6 +15,79 @@ import { extractArticleContext } from './reader/extract';
 import { getExistingOverlay, removeOverlay, renderReaderOverlay } from './reader/render';
 
 let activeRunId = 0;
+let isTranslationActive = false;
+let activeMode: 'reader' | 'inline' | null = null;
+let inlineObserver: MutationObserver | null = null;
+let inlineRefreshTimer: number | null = null;
+
+function isRenderedUiPresent(): boolean {
+  if (activeMode === 'reader') {
+    return Boolean(getExistingOverlay());
+  }
+
+  if (activeMode === 'inline') {
+    return Boolean(document.querySelector('[data-llmtr-inline=\"1\"]'));
+  }
+
+  return false;
+}
+
+function stopInlineObserver(): void {
+  if (inlineObserver) {
+    inlineObserver.disconnect();
+    inlineObserver = null;
+  }
+
+  if (inlineRefreshTimer != null) {
+    window.clearTimeout(inlineRefreshTimer);
+    inlineRefreshTimer = null;
+  }
+}
+
+function hasMeaningfulMutation(mutations: MutationRecord[]): boolean {
+  return mutations.some((mutation) => {
+    if (mutation.type !== 'childList' || !mutation.addedNodes.length) return false;
+
+    return Array.from(mutation.addedNodes).some((node) => {
+      if (!(node instanceof HTMLElement)) return false;
+      if (node.dataset.llmtrInline === '1') return false;
+      if (node.closest('#llmtr-reader-overlay')) return false;
+      if (node.querySelector('[data-llmtr-inline="1"]')) return false;
+
+      const text = (node.textContent ?? '').trim();
+      return text.length > 40;
+    });
+  });
+}
+
+function scheduleInlineRefresh(): void {
+  if (!isTranslationActive || activeMode !== 'inline') return;
+
+  if (inlineRefreshTimer != null) {
+    window.clearTimeout(inlineRefreshTimer);
+  }
+
+  inlineRefreshTimer = window.setTimeout(() => {
+    startTranslation(true).catch((error) => {
+      console.warn('[llmtr] inline refresh failed', error);
+    });
+  }, 1400);
+}
+
+function startInlineObserver(): void {
+  if (inlineObserver || !isTranslationActive || activeMode !== 'inline') return;
+
+  inlineObserver = new MutationObserver((mutations) => {
+    if (hasMeaningfulMutation(mutations)) {
+      scheduleInlineRefresh();
+    }
+  });
+
+  inlineObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
 
 async function sendRuntimeMessage<T>(message: RuntimeMessage): Promise<T> {
   const response = (await chrome.runtime.sendMessage(message)) as RuntimeResponse<T>;
@@ -78,6 +151,8 @@ async function translateReader(article: ArticleContext, runId: number): Promise<
 }
 
 async function translateInline(article: ArticleContext, runId: number): Promise<void> {
+  stopInlineObserver();
+
   clearInlineInjected();
   const mapped = mapInlineParagraphs();
   if (!mapped.length) {
@@ -115,10 +190,24 @@ async function translateInline(article: ArticleContext, runId: number): Promise<
       group.forEach((item) => markInlineError(item.block.id, message));
     }
   }
+
+  if (runId === activeRunId) {
+    startInlineObserver();
+  }
 }
 
-async function startTranslation(): Promise<void> {
+async function startTranslation(forceRestart = false): Promise<void> {
   ensureReaderStyles();
+
+  if (forceRestart) {
+    stopTranslation(false);
+  } else if (isTranslationActive && isRenderedUiPresent()) {
+    return;
+  } else if (isTranslationActive) {
+    isTranslationActive = false;
+    activeMode = null;
+    stopInlineObserver();
+  }
 
   const article = extractArticleContext();
   if (!article.blocks.length) {
@@ -129,34 +218,83 @@ async function startTranslation(): Promise<void> {
   const runId = activeRunId;
 
   const settings = await loadSettings();
-  if (settings.mode === 'inline') {
-    await translateInline(article, runId);
-  } else {
-    await translateReader(article, runId);
+  isTranslationActive = true;
+  activeMode = settings.mode;
+
+  try {
+    if (settings.mode === 'inline') {
+      await translateInline(article, runId);
+    } else {
+      await translateReader(article, runId);
+    }
+  } catch (error) {
+    if (runId === activeRunId) {
+      isTranslationActive = false;
+      activeMode = null;
+      stopInlineObserver();
+    }
+    throw error;
   }
 }
 
-function stopTranslation(): void {
-  activeRunId += 1;
+function stopTranslation(incrementRunId = true): void {
+  if (incrementRunId) {
+    activeRunId += 1;
+  }
+  isTranslationActive = false;
+  activeMode = null;
+  stopInlineObserver();
   removeOverlay();
   clearInlineInjected();
 }
 
-chrome.runtime.onMessage.addListener((message: { type: 'START_TRANSLATION' | 'STOP_TRANSLATION' }, _, sendResponse) => {
-  if (message.type === 'START_TRANSLATION') {
-    startTranslation()
-      .then(() => sendResponse({ ok: true }))
-      .catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : '실패' }));
-    return true;
-  }
+chrome.runtime.onMessage.addListener(
+  (
+    message: {
+      type:
+        | 'START_TRANSLATION'
+        | 'STOP_TRANSLATION'
+        | 'TOGGLE_TRANSLATION'
+        | 'PING_TRANSLATION_STATE';
+    },
+    _,
+    sendResponse
+  ) => {
+    if (message.type === 'START_TRANSLATION') {
+      startTranslation()
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : '실패' }));
+      return true;
+    }
 
-  if (message.type === 'STOP_TRANSLATION') {
-    stopTranslation();
-    sendResponse({ ok: true });
+    if (message.type === 'STOP_TRANSLATION') {
+      stopTranslation();
+      sendResponse({ ok: true });
+      return false;
+    }
+
+    if (message.type === 'TOGGLE_TRANSLATION') {
+      const willActivate = !isTranslationActive;
+      const task = willActivate ? startTranslation() : Promise.resolve(stopTranslation());
+      task
+        .then(() => sendResponse({ ok: true, active: willActivate }))
+        .catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : '실패' }));
+      return true;
+    }
+
+    if (message.type === 'PING_TRANSLATION_STATE') {
+      sendResponse({ ok: true, active: isTranslationActive, mode: activeMode });
+      return false;
+    }
+
     return false;
   }
+);
 
-  return false;
+window.addEventListener('llmtr-reader-closed', () => {
+  if (activeMode === 'reader') {
+    stopTranslation();
+  }
 });
 
 if (getExistingOverlay()) {
