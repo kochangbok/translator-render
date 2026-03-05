@@ -19,7 +19,7 @@
 - 아이콘: `public/icons/icon-128.png`
 - 스크린샷: 최소 1장(권장 3~5장, `docs/webstore-screenshot-captions.md` 사용)
 - 개인정보처리방침 URL:
-  - GitHub repo의 `docs/privacy-policy.md`를 GitHub Pages/외부 페이지로 게시한 URL
+  - `https://kochangbok.github.io/translator-render/privacy-policy/`
 
 ## 4) 권한 설명 포인트
 - `storage`: 설정, 캐시 저장

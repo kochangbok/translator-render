@@ -54,6 +54,7 @@ npm run pack
 - 스크린샷 캡션 최종본: `docs/webstore-screenshot-captions.md`
 - 제출 체크리스트: `docs/webstore-submission-checklist.md`
 - 개인정보처리방침: `docs/privacy-policy.md`
+- 공개 Privacy URL: `https://kochangbok.github.io/translator-render/privacy-policy/`
 
 ## 참고
 - OAuth/Proxy/API Key 모두 지원합니다. 단, Provider가 OAuth를 공식 지원해야 로그인 성공합니다.
