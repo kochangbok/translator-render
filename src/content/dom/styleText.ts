@@ -1,0 +1,96 @@
+export const READER_STYLES = `
+#llmtr-reader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: rgba(8, 12, 18, 0.6);
+  backdrop-filter: blur(2px);
+}
+#llmtr-reader-overlay .llmtr-shell {
+  width: min(980px, calc(100% - 32px));
+  height: calc(100% - 32px);
+  margin: 16px auto;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.25);
+}
+#llmtr-reader-overlay .llmtr-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eaeef2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+#llmtr-reader-overlay .llmtr-title {
+  display: block;
+  font-size: 12px;
+  color: #57606a;
+  margin-top: 4px;
+}
+#llmtr-reader-overlay .llmtr-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#llmtr-reader-overlay .llmtr-status {
+  font-size: 12px;
+  color: #57606a;
+}
+#llmtr-reader-overlay .llmtr-header button {
+  border: 1px solid #d0d7de;
+  background: white;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+#llmtr-reader-overlay .llmtr-main {
+  overflow: auto;
+  padding: 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.7;
+}
+#llmtr-reader-overlay .llmtr-block {
+  margin-bottom: 18px;
+  border-bottom: 1px dashed #eaeef2;
+  padding-bottom: 12px;
+}
+#llmtr-reader-overlay .llmtr-src {
+  color: #24292f;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+#llmtr-reader-overlay .llmtr-tr,
+.llmtr-inline-translation {
+  color: #0550ae;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 15px;
+}
+#llmtr-reader-overlay .llmtr-loading,
+.llmtr-inline-translation.llmtr-loading {
+  color: #6e7781;
+  background: #f6f8fa;
+  border-color: #d0d7de;
+}
+#llmtr-reader-overlay .llmtr-error,
+.llmtr-inline-translation.llmtr-error {
+  color: #b42318;
+  background: #fff1f3;
+  border-color: #fda4af;
+}
+`;
+
+export function ensureReaderStyles(): void {
+  if (document.getElementById('llmtr-style')) return;
+  const style = document.createElement('style');
+  style.id = 'llmtr-style';
+  style.textContent = READER_STYLES;
+  document.documentElement.appendChild(style);
+}
