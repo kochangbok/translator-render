@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "LLM Translator Render",
+  "version": "0.1.0",
+  "description": "Reader 모드 기반 문단 단위 한국어 번역 확장",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "<all_urls>",
+    "https://api.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "LLM Translator",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-loader.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content-main.js", "chunks/*", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
