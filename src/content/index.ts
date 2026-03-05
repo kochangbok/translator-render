@@ -1,9 +1,9 @@
 import { chunkArray } from '@/shared/chunk';
-import { loadSettings } from '@/shared/storage';
 import type {
   ArticleContext,
   ParagraphBlock,
   PreparedContext,
+  PublicExtensionSettings,
   RuntimeMessage,
   RuntimeResponse,
   TranslationResult
@@ -97,18 +97,21 @@ async function sendRuntimeMessage<T>(message: RuntimeMessage): Promise<T> {
   return response.data;
 }
 
+async function getPublicSettings(): Promise<PublicExtensionSettings> {
+  return sendRuntimeMessage<PublicExtensionSettings>({ type: 'GET_PUBLIC_SETTINGS' });
+}
+
 function neighborContextFromBlocks(all: ParagraphBlock[], index: number): string[] {
   const prev = all[index - 1]?.text;
   const next = all[index + 1]?.text;
   return [prev, next].filter(Boolean) as string[];
 }
 
-async function translateReader(article: ArticleContext, runId: number): Promise<void> {
+async function translateReader(article: ArticleContext, runId: number, settings: PublicExtensionSettings): Promise<void> {
   const overlay = renderReaderOverlay(article);
 
   try {
     overlay.updateStatus('문서 컨텍스트 준비 중...');
-    const settings = await loadSettings();
     const prepared = await sendRuntimeMessage<PreparedContext>({
       type: 'PREPARE_DOCUMENT',
       payload: article
@@ -150,7 +153,7 @@ async function translateReader(article: ArticleContext, runId: number): Promise<
   }
 }
 
-async function translateInline(article: ArticleContext, runId: number): Promise<void> {
+async function translateInline(article: ArticleContext, runId: number, settings: PublicExtensionSettings): Promise<void> {
   stopInlineObserver();
 
   clearInlineInjected();
@@ -161,7 +164,6 @@ async function translateInline(article: ArticleContext, runId: number): Promise<
 
   injectInlinePlaceholders(mapped);
 
-  const settings = await loadSettings();
   const prepared = await sendRuntimeMessage<PreparedContext>({
     type: 'PREPARE_DOCUMENT',
     payload: article
@@ -217,15 +219,15 @@ async function startTranslation(forceRestart = false): Promise<void> {
   activeRunId += 1;
   const runId = activeRunId;
 
-  const settings = await loadSettings();
+  const settings = await getPublicSettings();
   isTranslationActive = true;
   activeMode = settings.mode;
 
   try {
     if (settings.mode === 'inline') {
-      await translateInline(article, runId);
+      await translateInline(article, runId, settings);
     } else {
-      await translateReader(article, runId);
+      await translateReader(article, runId, settings);
     }
   } catch (error) {
     if (runId === activeRunId) {

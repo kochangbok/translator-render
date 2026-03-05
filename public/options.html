@@ -60,6 +60,47 @@
         <input id="proxyUrl" type="url" placeholder="https://your-proxy.workers.dev/translate" />
       </label>
 
+      <fieldset style="border: 1px solid #d0d7de; border-radius: 10px; padding: 12px;">
+        <legend style="padding: 0 6px;">OAuth 설정 (선택)</legend>
+
+        <label>
+          OAuth Auth URL
+          <input id="oauthAuthUrl" type="url" placeholder="https://provider.com/oauth/authorize" />
+        </label>
+
+        <label>
+          OAuth Token URL
+          <input id="oauthTokenUrl" type="url" placeholder="https://provider.com/oauth/token" />
+        </label>
+
+        <label>
+          OAuth Client ID
+          <input id="oauthClientId" type="text" placeholder="client-id" />
+        </label>
+
+        <label>
+          OAuth Client Secret (선택)
+          <input id="oauthClientSecret" type="password" placeholder="client-secret" autocomplete="off" />
+        </label>
+
+        <label>
+          OAuth Scope
+          <input id="oauthScope" type="text" placeholder="openid profile email" />
+        </label>
+
+        <label>
+          OAuth Audience (선택)
+          <input id="oauthAudience" type="text" placeholder="https://api.provider.com" />
+        </label>
+
+        <div class="row">
+          <button id="oauthLogin" type="button">OAuth 로그인</button>
+          <button id="oauthLogout" type="button">OAuth 로그아웃</button>
+          <button id="oauthRefresh" type="button">OAuth 상태 확인</button>
+        </div>
+        <div id="oauthStatus" class="hint"></div>
+      </fieldset>
+
       <label>
         기본 모드
         <select id="mode">

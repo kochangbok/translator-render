@@ -3,12 +3,15 @@ import { buildBlockCacheKey } from '@/shared/hash';
 import { loadSettings, saveSettings } from '@/shared/storage';
 import type {
   ArticleContext,
+  ExtensionSettings,
   ParagraphBlock,
   PreparedContext,
+  PublicExtensionSettings,
   RuntimeMessage,
   RuntimeResponse,
   TranslationResult
 } from '@/shared/types';
+import { clearOAuthToken, getOAuthAccessToken, getOAuthTokenState, startOAuthLogin } from './auth/oauth';
 import { clearTranslationCache, getCachedTranslations, setCachedTranslations } from './cache/storage';
 import { createProvider } from './providers';
 
@@ -48,15 +51,42 @@ function buildNeighborContext(blocks: ParagraphBlock[], currentIndex: number): s
   return [prev, next].filter(Boolean) as string[];
 }
 
-async function prepareDocument(article: ArticleContext): Promise<PreparedContext> {
+function toPublicSettings(settings: ExtensionSettings): PublicExtensionSettings {
+  return {
+    providerId: settings.providerId,
+    authType: settings.authType,
+    mode: settings.mode,
+    chunkSize: settings.chunkSize
+  };
+}
+
+async function getProviderSettings(): Promise<ExtensionSettings> {
   const settings = await loadSettings();
+
+  if (settings.authType !== 'oauth') {
+    return settings;
+  }
+
+  const oauthToken = await getOAuthAccessToken(settings);
+  if (!oauthToken) {
+    throw new Error('OAuth 토큰이 없습니다. 옵션에서 OAuth 로그인 후 다시 시도하세요.');
+  }
+
+  return {
+    ...settings,
+    apiKey: oauthToken
+  };
+}
+
+async function prepareDocument(article: ArticleContext): Promise<PreparedContext> {
+  const settings = await getProviderSettings();
   const provider = createProvider(settings);
 
   return provider.prepareContext({ article });
 }
 
 async function testProviderConnection(): Promise<{ provider: string; model: string; sample: string }> {
-  const settings = await loadSettings();
+  const settings = await getProviderSettings();
   const provider = createProvider(settings);
 
   const results = await withRetries(
@@ -96,7 +126,7 @@ async function translateChunk(payload: {
   preparedContext: PreparedContext;
   neighborContext: string[];
 }): Promise<TranslationResult[]> {
-  const settings = await loadSettings();
+  const settings = await getProviderSettings();
   const provider = createProvider(settings);
 
   const cacheKeys = payload.blocks.map((block) => buildBlockCacheKey(payload.article.url, block.id, block.text));
@@ -168,6 +198,10 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _, sendResponse) 
           const settings = await loadSettings();
           return ok(settings);
         }
+        case 'GET_PUBLIC_SETTINGS': {
+          const settings = await loadSettings();
+          return ok(toPublicSettings(settings));
+        }
         case 'SAVE_SETTINGS': {
           const settings = await saveSettings(message.payload);
           return ok(settings);
@@ -179,6 +213,26 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _, sendResponse) 
         case 'TEST_PROVIDER': {
           const data = await testProviderConnection();
           return ok(data);
+        }
+        case 'OAUTH_LOGIN': {
+          const settings = await loadSettings();
+          if (settings.authType !== 'oauth') {
+            throw new Error('Auth Type을 OAuth로 변경한 뒤 시도하세요.');
+          }
+          const data = await startOAuthLogin(settings);
+          return ok(data);
+        }
+        case 'OAUTH_LOGOUT': {
+          await clearOAuthToken();
+          return ok({ disconnected: true });
+        }
+        case 'OAUTH_STATUS': {
+          const settings = await loadSettings();
+          if (settings.authType !== 'oauth') {
+            return ok({ connected: false, hasRefreshToken: false });
+          }
+          const state = await getOAuthTokenState(settings);
+          return ok(state);
         }
         case 'PREPARE_DOCUMENT': {
           const data = await prepareDocument(message.payload);

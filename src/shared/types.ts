@@ -40,11 +40,30 @@ export interface ExtensionSettings {
   model: string;
   endpoint: string;
   proxyUrl: string;
+  oauthAuthUrl: string;
+  oauthTokenUrl: string;
+  oauthClientId: string;
+  oauthClientSecret: string;
+  oauthScope: string;
+  oauthAudience: string;
   targetLang: 'ko';
   chunkSize: number;
   mode: RenderMode;
   temperature: number;
   maxRetries: number;
+}
+
+export interface PublicExtensionSettings {
+  providerId: ProviderId;
+  authType: AuthType;
+  mode: RenderMode;
+  chunkSize: number;
+}
+
+export interface OAuthTokenState {
+  connected: boolean;
+  hasRefreshToken: boolean;
+  expiresAt?: number;
 }
 
 export interface TranslateChunkPayload {
@@ -56,9 +75,13 @@ export interface TranslateChunkPayload {
 
 export type RuntimeMessage =
   | { type: 'GET_SETTINGS' }
+  | { type: 'GET_PUBLIC_SETTINGS' }
   | { type: 'SAVE_SETTINGS'; payload: Partial<ExtensionSettings> }
   | { type: 'CLEAR_CACHE' }
   | { type: 'TEST_PROVIDER' }
+  | { type: 'OAUTH_LOGIN' }
+  | { type: 'OAUTH_LOGOUT' }
+  | { type: 'OAUTH_STATUS' }
   | { type: 'PREPARE_DOCUMENT'; payload: ArticleContext }
   | { type: 'TRANSLATE_CHUNK'; payload: TranslateChunkPayload };
 
